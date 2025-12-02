@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate Verification - Faraz Concepts</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-container">
+                <i class="fas fa-certificate logo-icon"></i>
+                <h1 class="logo-text">Faraz Concepts</h1>
+            </div>
+            <a href="index.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i> Back to Home
+            </a>
+        </header>
+
+        <!-- Verification Result -->
+        <div class="verification-result" id="resultContainer">
+            <div class="result-header">
+                <h2><i class="fas fa-search"></i> Certificate Verification</h2>
+                <div class="search-box">
+                    <input type="text" id="newCertId" placeholder="Verify another certificate...">
+                    <button onclick="verifyNew()" class="search-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="result-body">
+                <!-- Result will be loaded here -->
+                <div class="loading" id="loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Verifying certificate...</p>
+                </div>
+                
+                <div class="result-content" id="resultContent" style="display: none;">
+                    <!-- Content will be inserted by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>© 2025 Faraz Concepts. All certificates are digitally signed and verified.</p>
+            <p>For issues, contact: info@farazconcepts.com</p>
+        </footer>
+    </div>
+
+    <script>
+        // Get certificate ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const certId = urlParams.get('id');
+
+        // Fetch and display certificate data
+        async function loadCertificateData() {
+            const loading = document.getElementById('loading');
+            const resultContent = document.getElementById('resultContent');
+            
+            try {
+                // Load the JSON data
+                const response = await fetch('data.json');
+                const certificates = await response.json();
+                
+                // Find the certificate
+                const certificate = certificates.find(cert => cert.Certificate_ID === certId);
+                
+                // Hide loading
+                loading.style.display = 'none';
+                resultContent.style.display = 'block';
+                
+                if (certificate) {
+                    // Certificate found - show details
+                    displayCertificate(certificate);
+                } else {
+                    // Certificate not found
+                    displayNotFound();
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                resultContent.style.display = 'block';
+                resultContent.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Error Loading Data</h3>
+                        <p>Unable to load certificate data. Please try again.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayCertificate(cert) {
+            const resultContent = document.getElementById('resultContent');
+            
+            // Format date
+            const date = new Date(cert.Completion_Date);
+            const formattedDate = date.toLocaleDateString('en-US', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+            
+            // Generate QR code URL
+            const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://farazconcepts.github.io/verify/?id=${cert.Certificate_ID}`;
+            
+            resultContent.innerHTML = `
+                <div class="certificate-details">
+                    <div class="status-badge verified">
+                        <i class="fas fa-check-circle"></i> VERIFIED CERTIFICATE
+                    </div>
+                    
+                    <div class="details-grid">
+                        <div class="detail-card">
+                            <div class="detail-icon">
+                                <i class="fas fa-user-graduate"></i>
+                            </div>
+                            <div class="detail-content">
+                                <h4>Student Name</h4>
+                                <p class="detail-value">${cert.Full_Name}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-card">
+                            <div class="detail-icon">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div class="detail-content">
+                                <h4>Course</h4>
+                                <p class="detail-value">${cert.Course_Name}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-card">
+                            <div class="detail-icon">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="detail-content">
+                                <h4>Completion Date</h4>
+                                <p class="detail-value">${formattedDate}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-card">
+                            <div class="detail-icon">
+                                <i class="fas fa-id-card"></i>
+                            </div>
+                            <div class="detail-content">
+                                <h4>Certificate ID</h4>
+                                <p class="detail-value cert-id">${cert.Certificate_ID}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="qr-section">
+                        <div class="qr-code">
+                            <img src="${qrCodeUrl}" alt="QR Code" id="qrImage">
+                            <p class="qr-hint">Scan to verify</p>
+                        </div>
+                        <div class="verification-info">
+                            <h4><i class="fas fa-shield-alt"></i> Verification Details</h4>
+                            <ul>
+                                <li><i class="fas fa-check"></i> Digitally Verified</li>
+                                <li><i class="fas fa-database"></i> Recorded in Database</li>
+                                <li><i class="fas fa-clock"></i> Verified on: ${new Date().toLocaleDateString()}</li>
+                                <li><i class="fas fa-user-tie"></i> Issued by: Ahmed Faraz</li>
+                            </ul>
+                            <button onclick="printCertificate()" class="print-btn">
+                                <i class="fas fa-print"></i> Print Verification
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button onclick="verifyNew()" class="action-btn">
+                            <i class="fas fa-search"></i> Verify Another
+                        </button>
+                        <a href="index.html" class="action-btn home-btn">
+                            <i class="fas fa-home"></i> Back to Home
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayNotFound() {
+            const resultContent = document.getElementById('resultContent');
+            resultContent.innerHTML = `
+                <div class="not-found">
+                    <i class="fas fa-times-circle"></i>
+                    <h3>Certificate Not Found</h3>
+                    <p>The certificate ID <strong>"${certId}"</strong> was not found in our database.</p>
+                    <div class="suggestions">
+                        <p><i class="fas fa-lightbulb"></i> Suggestions:</p>
+                        <ul>
+                            <li>Check for typing errors</li>
+                            <li>Verify the Certificate ID on your certificate</li>
+                            <li>Contact support if issue persists</li>
+                        </ul>
+                    </div>
+                    <button onclick="verifyNew()" class="action-btn">
+                        <i class="fas fa-search"></i> Try Another ID
+                    </button>
+                </div>
+            `;
+        }
+
+        function verifyNew() {
+            const newId = document.getElementById('newCertId').value || certId;
+            if (newId) {
+                window.location.href = `verify.html?id=${newId}`;
+            }
+        }
+
+        function printCertificate() {
+            window.print();
+        }
+
+        // Load data when page loads
+        if (certId) {
+            document.getElementById('newCertId').value = certId;
+            loadCertificateData();
+        } else {
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
